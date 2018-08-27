@@ -1,6 +1,6 @@
 package com.gamasoft.silverbars.model
 
-sealed class Order
+sealed class Order()
 
 data class SellOrder(val kg: QuantityInKg, val price: Price, val user: User): Order()
 

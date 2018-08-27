@@ -1,5 +1,6 @@
 package com.gamasoft.silverbars.model
 
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 //It's specified but I assume that Buy and Sell orders are displayed separately
@@ -8,18 +9,32 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class LiveOrderBoard {
 
-    val orderId = AtomicInteger(1)
+    private val nextOrderId = AtomicInteger(1)
 
-    fun placeOrder(o: Order): Int {
+    private val orders:MutableMap<Int, Order> = ConcurrentHashMap()
 
-        return orderId.getAndIncrement()
-    }
+    fun placeOrder(o: Order): Int =
+            nextOrderId.getAndIncrement().also { orders.put(it, o) }
 
-    fun cancelOrder(orderId: Int) {
 
-    }
+    fun cancelOrder(orderId: Int) =
+        orders.remove(orderId)
 
-    fun displaySell(): List<OrderSummary> = listOf()
-    fun displayBuy(): List<OrderSummary> = listOf()
+
+    fun displaySell(): List<OrderSummary> = orders.values
+                .filterIsInstance<SellOrder>()
+                .map { OrderSummary(it.kg, it.price) }
+                .groupingBy {it.price }
+                .reduce{p,tot,ord -> OrderSummary(tot.weight + ord.weight, p)}
+                .values.sortedBy { it.price }
+
+
+    fun displayBuy(): List<OrderSummary> = orders.values
+            .filterIsInstance<BuyOrder>()
+            .map { OrderSummary(it.kg, it.price) }
+            .groupingBy {it.price }
+            .reduce{p,tot,ord -> OrderSummary(tot.weight + ord.weight, p)}
+            .values.sortedBy { it.price }
+            .reversed()
 
 }
